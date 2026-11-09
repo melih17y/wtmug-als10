@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PWA Bilgisayar / Web Arayüzü</title>
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#2563eb">
+    <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
+        body { background: #f1f5f9; color: #0f172a; min-height: 100vh; display: flex; flex-direction: column; }
+        header { background: #2563eb; color: #fff; padding: 1rem; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        header h1 { font-size: 1.1rem; font-weight: 600; }
+        .nav-btn { background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.4); color: #fff; padding: 0.4rem 0.8rem; border-radius: 6px; cursor: pointer; font-size: 0.85rem; }
+        .nav-btn:hover { background: rgba(255,255,255,0.3); }
+        main { flex: 1; padding: 1.5rem; max-width: 700px; width: 100%; margin: 0 auto; }
+        .view { display: none; }
+        .view.active { display: block; }
+        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-top: 1rem; }
+        .card { background: #fff; border-radius: 12px; padding: 1.5rem; border: 1px solid #e2e8f0; cursor: pointer; box-shadow: 0 1px 3px rgba(0,0,0,0.05); transition: all 0.2s; }
+        .card:hover { border-color: #2563eb; transform: translateY(-2px); box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
+        .card h2 { font-size: 1.1rem; color: #1e293b; margin-bottom: 0.5rem; }
+        .card p { font-size: 0.875rem; color: #64748b; line-height: 1.4; }
+        .box { background: #fff; border-radius: 10px; padding: 1.25rem; border: 1px solid #e2e8f0; margin-bottom: 1rem; }
+        .box-title { font-size: 0.95rem; font-weight: 600; margin-bottom: 0.75rem; color: #334155; }
+        input[type="file"], input[type="text"], textarea { width: 100%; padding: 0.6rem; border: 1px solid #cbd5e1; border-radius: 6px; margin-bottom: 0.75rem; font-size: 0.9rem; }
+        .btn { width: 100%; background: #2563eb; color: #fff; border: none; padding: 0.7rem; border-radius: 6px; font-size: 0.9rem; font-weight: 500; cursor: pointer; }
+        .btn:hover { background: #1d4ed8; }
+        .qr-area { display: flex; justify-content: center; margin: 1rem 0; background: #fff; padding: 10px; border-radius: 8px; border: 1px solid #e2e8f0; width: fit-content; margin-left: auto; margin-right: auto; }
+        .status { font-size: 0.85rem; color: #64748b; margin-top: 0.5rem; word-break: break-all; }
+        .progress-container { width: 100%; background: #e2e8f0; border-radius: 4px; height: 8px; margin: 0.75rem 0; overflow: hidden; }
+        .progress-bar { width: 0%; height: 100%; background: #059669; transition: width 0.1s linear; }
+        .chat-box { height: 200px; border: 1px solid #cbd5e1; border-radius: 6px; padding: 0.5rem; overflow-y: auto; background: #f8fafc; margin-bottom: 0.75rem; font-size: 0.85rem; display: flex; flex-direction: column; gap: 0.4rem; }
+        .chat-msg { padding: 0.4rem 0.6rem; border-radius: 6px; max-width: 80%; word-break: break-word; }
+        .chat-msg.me { background: #dbeafe; align-self: flex-end; color: #1e40af; }
+        .chat-msg.peer { background: #e2e8f0; align-self: flex-start; color: #334155; }
+        .log-box { font-family: monospace; font-size: 0.8rem; background: #0f172a; color: #38bdf8; padding: 0.75rem; border-radius: 6px; height: 150px; overflow-y: auto; margin-top: 0.5rem; }
+        .file-link { display: inline-block; margin-top: 0.5rem; background: #059669; color: white; padding: 0.4rem 0.8rem; border-radius: 4px; text-decoration: none; font-size: 0.85rem; }
+        .file-link:hover { background: #047857; }
+        .preview-img { max-width: 100%; max-height: 150px; border-radius: 6px; margin-top: 0.5rem; display: block; }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1 id="header-title">PWA Web & Masaüstü Arayüzü</h1>
+        <button class="nav-btn" onclick="switchView('view-home')">Ana Ekran</button>
+    </header>
+
+    <main>
+        <!-- ANA EKRAN -->
+        <div id="view-home" class="view active">
+            <div style="background: #dbeafe; border: 1px solid #bfdbfe; color: #1e40af; padding: 1rem; border-radius: 8px; font-size: 0.9rem; margin-bottom: 1.5rem;">
+                Anonim laboratuvarlarda güvenli P2P veri ve dosya transferi için modül seçiniz. Mobil arayüz için <b>mobile.html</b> dosyasını kullanabilirsiniz.
+            </div>
+            <div class="grid">
+                <div class="card" onclick="switchView('view-als08')">
+                    <h2>ALŞ08: P2P Çift Yönlü Transfer</h2>
+                    <p>Web ve Mobil arasında doğrudan şifreli metin, sohbet ve büyük dosya aktarımı (16KB Chunking).</p>
+                </div>
+                <div class="card" onclick="switchView('view-als09')">
+                    <h2>ALŞ09: Hoca Dağıtım Modu</h2>
+                    <p>Hoca bilgisayarından öğrenci cihazlarına toplu dosya gönderimi, kalıcı QR ve transfer logları.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- ALŞ08 UYGULAMASI (WEB) -->
+        <div id="view-als08" class="view">
+            <div class="box">
+                <div class="box-title">1. Bağlantı Bilgisi & QR Kod</div>
+                <div class="status" id="als08-my-id">Peer ID oluşturuluyor...</div>
+                <div class="qr-area" id="als08-qr"></div>
+            </div>
+
+            <div class="box">
+                <div class="box-title">2. Gerçek Zamanlı Sohbet ve Metin</div>
+                <div class="chat-box" id="als08-chat"></div>
+                <input type="text" id="als08-msg-input" placeholder="Mesaj yazın...">
+                <button class="btn" onclick="sendAls08Message()">Mesaj Gönder</button>
+            </div>
+
+            <div class="box">
+                <div class="box-title">3. Parçalı Dosya Transferi (Chunking - 16KB)</div>
+                <input type="file" id="als08-file-input">
+                <button class="btn" onclick="sendAls08File()">Dosyayı Gönder</button>
+                <div class="status" id="als08-transfer-status">Transfer bekleniyor...</div>
+                <div class="progress-container"><div class="progress-bar" id="als08-progress"></div></div>
+                <div id="als08-received-container"></div>
+            </div>
+        </div>
+
+        <!-- ALŞ09 UYGULAMASI (HOCA MODU) -->
+        <div id="view-als09" class="view">
+            <div class="box">
+                <div class="box-title">Hoca Modu: Toplu Dosya Dağıtımı</div>
+                <input type="file" id="als09-teacher-files" multiple>
+                <div class="status" id="als09-teacher-id">Hoca ID oluşturuluyor...</div>
+                <div class="qr-area" id="als09-teacher-qr"></div>
+                <div class="status" id="als09-teacher-status">Öğrencilerin bağlanması bekleniyor...</div>
+            </div>
+
+            <div class="box">
+                <div class="box-title">Canlı Transfer ve Bağlantı Günlüğü (Log)</div>
+                <div class="log-box" id="als09-log">Sistem hazır. Öğrenciler bekleniyor...\n</div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('sw.js').catch(() => {});
+        }
+
+        function switchView(viewId) {
+            document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+            document.getElementById(viewId).classList.add('active');
+            const titles = {
+                'view-home': 'PWA Web & Masaüstü Arayüzü',
+                'view-als08': 'ALŞ08: P2P Çift Yönlü Transfer',
+                'view-als09': 'ALŞ09: Hoca Dağıtım Modu'
+            };
+            document.getElementById('header-title').innerText = titles[viewId] || '';
+            if (viewId === 'view-als08' && !window.peer08) initAls08();
+            if (viewId === 'view-als09' && !window.peer09) initAls09();
+        }
+
+        // --- ALŞ08 MANTIĞI ---
+        let peer08 = null;
+        let conn08 = null;
+        const CHUNK_SIZE = 16384; // 16 KB
+
+        function initAls08() {
+            peer08 = new Peer();
+            peer08.on('open', id => {
+                document.getElementById('als08-my-id').innerText = 'Bağlantı ID: ' + id;
+                document.getElementById('als08-qr').innerHTML = '';
+                new QRCode(document.getElementById('als08-qr'), { text: id, width: 160, height: 160 });
+            });
+
+            peer08.on('connection', connection => {
+                conn08 = connection;
+                setupConnection08();
+                appendChat08('Sistem', 'Karşı cihaz bağlandı!', 'peer');
+            });
+        }
+
+        function setupConnection08() {
+            conn08.on('data', data => {
+                if (data.type === 'chat') {
+                    appendChat08('Karşı Taraf', data.text, 'peer');
+                } else if (data.type === 'file-meta') {
+                    window.incomingFile08 = {
+                        name: data.name,
+                        size: data.size,
+                        type: data.fileType,
+                        chunks: [],
+                        receivedSize: 0
+                    };
+                    document.getElementById('als08-transfer-status').innerText = `Dosya alınıyor: ${data.name}`;
+                } else if (data.type === 'file-chunk') {
+                    const fileObj = window.incomingFile08;
+                    if (fileObj) {
+                        fileObj.chunks[data.index] = data.chunk;
+                        fileObj.receivedSize += data.chunk.byteLength;
+                        const percent = Math.round((fileObj.receivedSize / fileObj.size) * 100);
+                        document.getElementById('als08-progress').style.width = percent + '%';
+                        document.getElementById('als08-transfer-status').innerText = `İndiriliyor: %${percent}`;
+
+                        if (fileObj.receivedSize >= fileObj.size) {
+                            const completeBlob = new Blob(fileObj.chunks, { type: fileObj.type });
+                            const url = URL.createObjectURL(completeBlob);
+                            const container = document.getElementById('als08-received-container');
+                            
+                            let html = `<div style="margin-top:0.75rem;"><strong>Gelen Dosya:</strong> ${fileObj.name}<br>`;
+                            if (fileObj.type.startsWith('image/')) {
+                                html += `<img src="${url}" class="preview-img">`;
+                            } else if (fileObj.type.startsWith('video/')) {
+                                html += `<video src="${url}" controls class="preview-img"></video>`;
+                            }
+                            html += `<a href="${url}" download="${fileObj.name}" class="file-link">Dosyayı İndir</a></div>`;
+                            container.innerHTML = html;
+                            document.getElementById('als08-transfer-status').innerText = 'Dosya transferi tamamlandı!';
+                        }
+                    }
+                }
+            });
+        }
+
+        function appendChat08(sender, text, cls) {
+            const chat = document.getElementById('als08-chat');
+            const div = document.createElement('div');
+            div.className = `chat-msg ${cls}`;
+            div.innerText = `${sender}: ${text}`;
+            chat.appendChild(div);
+            chat.scrollTop = chat.scrollHeight;
+        }
+
+        function sendAls08Message() {
+            const input = document.getElementById('als08-msg-input');
+            const text = input.value.trim();
+            if (!text || !conn08) return;
+            conn08.send({ type: 'chat', text: text });
+            appendChat08('Ben', text, 'me');
+            input.value = '';
+        }
+
+        function sendAls08File() {
+            const fileInput = document.getElementById('als08-file-input');
+            if (!fileInput.files.length || !conn08) {
+                alert('Lütfen bir dosya seçin ve aktif bağlantı olduğundan emin olun.');
+                return;
+            }
+            const file = fileInput.files[0];
+            conn08.send({ type: 'file-meta', name: file.name, size: file.size, fileType: file.type });
+
+            const reader = new FileReader();
+            let offset = 0;
+            let chunkIndex = 0;
+
+            reader.onload = e => {
+                const chunk = e.target.result;
+                conn08.send({ type: 'file-chunk', index: chunkIndex, chunk: chunk });
+                offset += chunk.byteLength;
+                chunkIndex++;
+
+                const percent = Math.round((offset / file.size) * 100);
+                document.getElementById('als08-progress').style.width = percent + '%';
+                document.getElementById('als08-transfer-status').innerText = `Gönderiliyor: %${percent}`;
+
+                if (offset < file.size) {
+                    readNextChunk();
+                } else {
+                    document.getElementById('als08-transfer-status').innerText = 'Dosya başarıyla gönderildi!';
+                }
+            };
+
+            function readNextChunk() {
+                const slice = file.slice(offset, offset + CHUNK_SIZE);
+                reader.readAsArrayBuffer(slice);
+            }
+
+            readNextChunk();
+        }
+
+        // --- ALŞ09 MANTIĞI (HOCA) ---
+        let peer09 = null;
+        let teacherFiles = [];
+        let connectedStudents = 0;
+
+        function initAls09() {
+            peer09 = new Peer();
+            peer09.on('open', id => {
+                document.getElementById('als09-teacher-id').innerText = 'Hoca Bağlantı ID: ' + id;
+                document.getElementById('als09-teacher-qr').innerHTML = '';
+                new QRCode(document.getElementById('als09-teacher-qr'), { text: id, width: 160, height: 160 });
+                logAls09('Peer sunucusu açıldı. Hoca ID: ' + id);
+            });
+
+            peer09.on('connection', conn => {
+                connectedStudents++;
+                logAls09(`Yeni öğrenci bağlandı! Toplam öğrenci: ${connectedStudents} (ID: ${conn.peer})`);
+                
+                conn.on('open', () => {
+                    conn.send({ type: 'file-list', files: teacherFiles.map(f => ({ name: f.name, size: f.size, type: f.type })) });
+                    logAls09(`Öğrenciye dosya listesi iletildi (${teacherFiles.length} dosya).`);
+                });
+
+                conn.on('data', data => {
+                    if (data.type === 'request-file') {
+                        const target = teacherFiles.find(f => f.name === data.fileName);
+                        if (target) {
+                            logAls09(`Öğrenci dosya istedi: ${target.name}. Parçalı gönderim başlıyor...`);
+                            sendTeacherFileToStudent(conn, target);
+                        }
+                    }
+                });
+            });
+        }
+
+        document.getElementById('als09-teacher-files').addEventListener('change', e => {
+            teacherFiles = Array.from(e.target.files);
+            logAls09(`${teacherFiles.length} adet dosya seçildi ve paylaşıma hazır.`);
+            document.getElementById('als09-teacher-status').innerText = `${teacherFiles.length} dosya paylaşıma hazır. QR kod kalıcıdır.`;
+        });
+
+        function sendTeacherFileToStudent(conn, file) {
+            conn.send({ type: 'file-meta', name: file.name, size: file.size, fileType: file.type });
+            const reader = new FileReader();
+            let offset = 0;
+            let index = 0;
+
+            reader.onload = e => {
+                conn.send({ type: 'file-chunk', index: index, chunk: e.target.result });
+                offset += e.target.result.byteLength;
+                index++;
+                if (offset < file.size) {
+                    readNext();
+                } else {
+                    logAls09(`Dosya başarıyla gönderildi: ${file.name} -> ${conn.peer}`);
+                }
+            };
+
+            function readNext() {
+                reader.readAsArrayBuffer(file.slice(offset, offset + CHUNK_SIZE));
+            }
+            readNext();
+        }
+
+        function logAls09(text) {
+            const box = document.getElementById('als09-log');
+            box.innerText += `[${new Date().toLocaleTimeString()}] ${text}\n`;
+            box.scrollTop = box.scrollHeight;
+        }
+
+        initAls08();
+    </script>
+</body>
+</html>
